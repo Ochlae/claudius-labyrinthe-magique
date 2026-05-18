@@ -216,8 +216,8 @@ function drawMap(){
       }
       else if(value === "P"){
         cell.classList.add("player");
-        cell.innerHTML =
-`<img src="claudius-face.png"
+    cell.innerHTML =
+`<img src="claudius-${direction}.png"
 style="width:90%;height:90%;object-fit:contain;">`;
       }
       else if(value === "R"){
@@ -258,9 +258,7 @@ const newY=player.y+dy;
 
 const target=map[newY][newX];
 
-  const newX = player.x + dx;
-  const newY = player.y + dy;
-  const target = map[newY][newX];
+
 
   if(target === "#"){
     message.innerHTML = "Un mur noir bloque le passage.";
