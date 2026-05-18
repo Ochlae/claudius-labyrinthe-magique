@@ -215,7 +215,9 @@ function drawMap(){
       }
       else if(value === "P"){
         cell.classList.add("player");
-        cell.textContent = "🎨";
+        cell.innerHTML =
+`<img src="claudius-face.png"
+style="width:90%;height:90%;object-fit:contain;">`;
       }
       else if(value === "R"){
         cell.classList.add("color");
