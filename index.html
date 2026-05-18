@@ -242,12 +242,21 @@ style="width:90%;height:90%;object-fit:contain;">`;
   }
 }
 
-function movePlayer(dx, dy){
-if(dx === 1) direction = "droite";
-if(dx === -1) direction = "gauche";
-if(dy === 1) direction = "bas";
-if(dy === -1) direction = "haut";  
-  if(gameFinished) return;
+function movePlayer(dx,dy){
+
+if(gameFinished) return;
+
+if(dx===1) direction="droite";
+if(dx===-1) direction="gauche";
+if(dy===1) direction="bas";
+if(dy===-1) direction="haut";
+
+drawMap();
+
+const newX=player.x+dx;
+const newY=player.y+dy;
+
+const target=map[newY][newX];
 
   const newX = player.x + dx;
   const newY = player.y + dy;
@@ -283,13 +292,16 @@ if(dy === -1) direction = "haut";
     }
   }
 
-  map[player.y][player.x] = ".";
-  player.x = newX;
-  player.y = newY;
-  map[player.y][player.x] = "P";
+map[player.y][player.x]=".";
 
-  colorsFoundSpan.textContent = colorsFound;
-  drawMap();
+player.x=newX;
+player.y=newY;
+
+map[player.y][player.x]="P";
+
+colorsFoundSpan.textContent=colorsFound;
+
+drawMap();
 }
 
 function finishGame(){
