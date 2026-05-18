@@ -134,8 +134,12 @@ const game=document.getElementById("game");
 
 function restart(){
   if(guardTimer) clearInterval(guardTimer);
+}
 
+map = JSON.parse(JSON.stringify(
   map=base.map(row=>row.split(""));
+  ));
+  
   x=1;
   y=1;
 
