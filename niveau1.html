@@ -1,0 +1,325 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Claudius Labyrinthe Magique</title>
+
+<style>
+body{
+  margin:0;
+  font-family:Arial, sans-serif;
+  background:linear-gradient(#111827,#050505);
+  color:white;
+  text-align:center;
+  padding:12px;
+}
+
+h1{
+  color:#ffb347;
+  margin:8px 0 4px;
+}
+
+#subtitle{
+  color:#ddd;
+  margin-bottom:12px;
+}
+
+#game{
+  display:grid;
+  grid-template-columns:repeat(12, 1fr);
+  gap:3px;
+  max-width:620px;
+  margin:auto;
+  background:#222;
+  padding:6px;
+  border-radius:14px;
+  box-shadow:0 0 25px rgba(255,150,50,0.35);
+}
+
+.cell{
+  aspect-ratio:1 / 1;
+  display:flex;
+  align-items:center;
+  justify-content:center;
+  border-radius:6px;
+  font-size:22px;
+  background:#e8e0c8;
+}
+
+.wall{
+  background:#111;
+}
+
+.player{
+  background:#ffe7a0;
+  box-shadow:0 0 12px #ffd36a;
+}
+
+.exit{
+  background:#ff8c1a;
+  box-shadow:0 0 14px #ffb347;
+}
+
+.color{
+  background:#f5f0df;
+}
+
+#message{
+  margin:14px auto 8px;
+  max-width:620px;
+  min-height:58px;
+  padding:12px;
+  background:rgba(0,0,0,0.55);
+  border:1px solid rgba(255,255,255,0.15);
+  border-radius:12px;
+  font-size:18px;
+  color:#ffe7a0;
+}
+
+#score{
+  margin-bottom:12px;
+  color:#ffdc8a;
+}
+
+#controls{
+  display:grid;
+  grid-template-columns:70px 70px 70px;
+  gap:8px;
+  justify-content:center;
+  margin-top:10px;
+}
+
+.control-btn{
+  height:58px;
+  border:none;
+  border-radius:14px;
+  background:#ff8c1a;
+  color:white;
+  font-size:26px;
+  font-weight:bold;
+  cursor:pointer;
+}
+
+.control-btn:hover{
+  background:#ffc04d;
+  color:#222;
+}
+
+.empty-btn{
+  visibility:hidden;
+}
+
+#restart{
+  margin-top:14px;
+  padding:10px 18px;
+  border:none;
+  border-radius:999px;
+  background:#304a7a;
+  color:white;
+  font-size:17px;
+  cursor:pointer;
+}
+
+#restart:hover{
+  background:#496dad;
+}
+
+@media(max-width:600px){
+  .cell{font-size:18px;}
+  h1{font-size:23px;}
+}
+</style>
+</head>
+
+<body>
+
+<h1>Claudius Labyrinthe Magique</h1>
+<div id="subtitle">Retrouve les couleurs perdues et rejoins le soleil.</div>
+
+<div id="score">Couleurs retrouvées : <span id="colorsFound">0</span> / 3</div>
+<div id="game"></div>
+
+<div id="message">
+Le petit peintre s’est perdu dans le tableau. Guide-le vers les couleurs, puis vers le soleil.
+</div>
+
+<div id="controls">
+  <button class="empty-btn"></button>
+  <button class="control-btn" onclick="movePlayer(0,-1)">▲</button>
+  <button class="empty-btn"></button>
+
+  <button class="control-btn" onclick="movePlayer(-1,0)">◀</button>
+  <button class="control-btn" onclick="movePlayer(0,1)">▼</button>
+  <button class="control-btn" onclick="movePlayer(1,0)">▶</button>
+</div>
+
+<button id="restart" onclick="restartGame()">Recommencer</button>
+
+<script>
+/*
+Légende :
+# = mur
+. = chemin
+P = joueur
+R/B/J = couleurs à récupérer
+S = soleil / sortie
+*/
+
+const originalMap = [
+  "############",
+  "#P....#....#",
+  "#.##.#.#.R.#",
+  "#....#.#.###",
+  "####.#.#...#",
+  "#....#...#.#",
+  "#.######.#.#",
+  "#...B....#.#",
+  "###.######.#",
+  "#.....J....#",
+  "#.########S#",
+  "############"
+];
+
+let map;
+let player = {x:1, y:1};
+let colorsFound = 0;
+let gameFinished = false;
+  let direction = "bas";
+
+const game = document.getElementById("game");
+const message = document.getElementById("message");
+const colorsFoundSpan = document.getElementById("colorsFound");
+
+function loadMap(){
+  map = originalMap.map(row => row.split(""));
+  player = {x:1, y:1};
+  colorsFound = 0;
+  gameFinished = false;
+  colorsFoundSpan.textContent = colorsFound;
+  message.innerHTML = "Le petit peintre s’est perdu dans le tableau. Guide-le vers les couleurs, puis vers le soleil.";
+  drawMap();
+}
+
+function drawMap(){
+  game.innerHTML = "";
+
+  for(let y=0; y<map.length; y++){
+    for(let x=0; x<map[y].length; x++){
+      const cell = document.createElement("div");
+      cell.className = "cell";
+
+      const value = map[y][x];
+
+      if(value === "#"){
+        cell.classList.add("wall");
+      }
+      else if(value === "P"){
+        cell.classList.add("player");
+    cell.innerHTML =
+`<img src="claudius-${direction}.png"
+style="width:90%;height:90%;object-fit:contain;">`;
+      }
+      else if(value === "R"){
+        cell.classList.add("color");
+        cell.textContent = "🔴";
+      }
+      else if(value === "B"){
+        cell.classList.add("color");
+        cell.textContent = "🔵";
+      }
+      else if(value === "J"){
+        cell.classList.add("color");
+        cell.textContent = "🟡";
+      }
+      else if(value === "S"){
+        cell.classList.add("exit");
+        cell.textContent = "☀️";
+      }
+
+      game.appendChild(cell);
+    }
+  }
+}
+
+function movePlayer(dx,dy){
+
+if(gameFinished) return;
+
+if(dx===1) direction="gauche";
+if(dx===-1) direction="droite";
+if(dy===1) direction="bas";
+if(dy===-1) direction="haut";
+
+drawMap();
+
+const newX=player.x+dx;
+const newY=player.y+dy;
+
+const target=map[newY][newX];
+
+
+
+  if(target === "#"){
+    message.innerHTML = "Un mur noir bloque le passage.";
+    return;
+  }
+
+  if(target === "R"){
+    colorsFound++;
+    message.innerHTML = "Rouge retrouvé : une braise rallume le village.";
+  }
+
+  if(target === "B"){
+    colorsFound++;
+    message.innerHTML = "Bleu retrouvé : la mer revient respirer.";
+  }
+
+  if(target === "J"){
+    colorsFound++;
+    message.innerHTML = "Jaune retrouvé : une lumière douce traverse les toits.";
+  }
+
+  if(target === "S"){
+    if(colorsFound < 3){
+      message.innerHTML = "Le soleil attend encore les trois couleurs perdues.";
+      return;
+    } else {
+      finishGame();
+      return;
+    }
+  }
+
+map[player.y][player.x]=".";
+
+player.x=newX;
+player.y=newY;
+
+map[player.y][player.x]="P";
+
+colorsFoundSpan.textContent=colorsFound;
+
+drawMap();
+}
+
+function finishGame(){
+  gameFinished = true;
+  message.innerHTML = "✨ Le soleil s’ouvre. Le tableau retrouve son âme. Bravo, tu as réveillé le labyrinthe des couleurs.";
+}
+
+function restartGame(){
+  loadMap();
+}
+
+window.addEventListener("keydown", function(e){
+  if(e.key === "ArrowUp") movePlayer(0,-1);
+  if(e.key === "ArrowDown") movePlayer(0,1);
+  if(e.key === "ArrowLeft") movePlayer(-1,0);
+  if(e.key === "ArrowRight") movePlayer(1,0);
+});
+
+loadMap();
+</script>
+
+</body>
+</html>
