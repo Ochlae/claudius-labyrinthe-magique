@@ -42,6 +42,7 @@ h1{color:#ffb347;}
 .doorR{background:#8b1f1f;}
 .doorB{background:#203b8b;}
 .exit{background:#ff9b2e;}
+.guard{background:#3b1f5c;}
 
 #msg{
   margin:12px auto;
@@ -70,6 +71,8 @@ button{
 <h1>Claudius Labyrinthe Magique N3</h1>
 
 <div>
+❤️ Vies : <span id="lives">3</span>
+&nbsp;&nbsp;
 🔴 <span id="r">0</span>/1
 🔵 <span id="b">0</span>/1
 🟡 <span id="j">0</span>/1
@@ -81,7 +84,7 @@ button{
 <div id="game"></div>
 
 <div id="msg">
-Trouve les clés, ouvre les portes et retrouve les trois couleurs.
+Le gardien des couleurs patrouille. Observe son passage avant d’avancer.
 </div>
 
 <div>
@@ -101,12 +104,13 @@ const base=[
 "###D####.#.#.#",
 "#......#.#...#",
 "#.######.###.#",
-"#..b..T..k...#",
+"#..b.....k...#",
 "#####.#####..#",
 "#....#....#..#",
 "#..j.#.S..d.r#",
 "##############"
 ];
+
 let map;
 let x;
 let y;
@@ -119,10 +123,19 @@ let keyR;
 let keyB;
 
 let direction;
+let lives;
+let gameOver;
+
+let guardX;
+let guardY;
+let guardDirection;
+let guardTimer;
 
 const game=document.getElementById("game");
 
 function restart(){
+  if(guardTimer) clearInterval(guardTimer);
+
   map=base.map(row=>row.split(""));
   x=1;
   y=1;
@@ -135,15 +148,24 @@ function restart(){
   keyB=false;
 
   direction="bas";
+  lives=3;
+  gameOver=false;
 
+  guardX=6;
+  guardY=5;
+  guardDirection=1;
+
+  document.getElementById("lives").textContent=lives;
   document.getElementById("r").textContent=0;
   document.getElementById("b").textContent=0;
   document.getElementById("j").textContent=0;
   document.getElementById("kr").textContent="❌";
   document.getElementById("kb").textContent="❌";
 
-  msg("Trouve les clés, ouvre les portes et retrouve les trois couleurs.");
+  msg("Le gardien des couleurs patrouille. Observe son passage avant d’avancer.");
   draw();
+
+  guardTimer=setInterval(moveGuard,700);
 }
 
 function draw(){
@@ -156,35 +178,37 @@ function draw(){
 
       const v=map[row][col];
 
-      if(v=="#") cell.classList.add("wall");
+      if(col===guardX && row===guardY){
+        cell.classList.add("guard");
+        cell.innerHTML="👻";
+      }
+      else if(v=="#") cell.classList.add("wall");
 
-      if(v=="P"){
+      else if(v=="P"){
         cell.innerHTML=`
           <img src="claudius-${direction}.png"
           style="width:90%;height:90%;object-fit:contain;">
         `;
       }
 
-      if(v=="r") cell.innerHTML="🔴";
-      if(v=="b") cell.innerHTML="🔵";
-      if(v=="j") cell.innerHTML="🟡";
+      else if(v=="r") cell.innerHTML="🔴";
+      else if(v=="b") cell.innerHTML="🔵";
+      else if(v=="j") cell.innerHTML="🟡";
 
-      if(v=="K") cell.innerHTML="🔑";
-      if(v=="k") cell.innerHTML="🗝";
+      else if(v=="K") cell.innerHTML="🔑";
+      else if(v=="k") cell.innerHTML="🗝";
 
-      if(v=="D"){
+      else if(v=="D"){
         cell.innerHTML="🚪";
         cell.classList.add("doorR");
       }
 
-      if(v=="d"){
+      else if(v=="d"){
         cell.innerHTML="🚪";
         cell.classList.add("doorB");
       }
 
-      if(v=="T") cell.innerHTML="🌀";
-
-      if(v=="S"){
+      else if(v=="S"){
         cell.innerHTML="☀️";
         cell.classList.add("exit");
       }
@@ -195,6 +219,8 @@ function draw(){
 }
 
 function move(dx,dy){
+  if(gameOver) return;
+
   if(dx==1) direction="gauche";
   if(dx==-1) direction="droite";
   if(dy==1) direction="bas";
@@ -204,7 +230,15 @@ function move(dx,dy){
   const ny=y+dy;
   const target=map[ny][nx];
 
-  if(target=="#") return;
+  if(target=="#"){
+    draw();
+    return;
+  }
+
+  if(nx===guardX && ny===guardY){
+    loseLife();
+    return;
+  }
 
   if(target=="D" && !keyR){
     msg("La porte rouge est fermée. Il faut trouver la clé rouge.");
@@ -248,19 +282,11 @@ function move(dx,dy){
     msg("Clé bleue trouvée.");
   }
 
-  if(target=="T"){
-    msg("Téléportation magique.");
-    map[y][x]=".";
-    x=2;
-    y=9;
-    map[y][x]="P";
-    draw();
-    return;
-  }
-
   if(target=="S"){
     if(red && blue && yellow){
-      msg("✨ Bravo Claude. Les trois couleurs sont revenues et le soleil s’ouvre.");
+      msg("✨ Bravo Claude. Tu as échappé au gardien et réveillé le soleil.");
+      gameOver=true;
+      clearInterval(guardTimer);
     }else{
       msg("Le soleil attend encore les trois couleurs perdues.");
       draw();
@@ -271,6 +297,48 @@ function move(dx,dy){
   map[y][x]=".";
   x=nx;
   y=ny;
+  map[y][x]="P";
+
+  draw();
+}
+
+function moveGuard(){
+  if(gameOver) return;
+
+  const nextX=guardX+guardDirection;
+
+  if(map[guardY][nextX]=="#"){
+    guardDirection*=-1;
+  }else{
+    guardX=nextX;
+  }
+
+  if(guardX===x && guardY===y){
+    loseLife();
+    return;
+  }
+
+  draw();
+}
+
+function loseLife(){
+  lives--;
+  document.getElementById("lives").textContent=lives;
+
+  if(lives<=0){
+    msg("💀 Le gardien t’a capturé. Partie terminée.");
+    gameOver=true;
+    clearInterval(guardTimer);
+    draw();
+    return;
+  }
+
+  msg("👻 Le gardien t’a surpris. Claudius revient au départ.");
+
+  map[y][x]=".";
+  x=1;
+  y=1;
+  direction="bas";
   map[y][x]="P";
 
   draw();
