@@ -1,0 +1,295 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<title>Claudius Labyrinthe Magique N2</title>
+
+<style>
+body{
+  margin:0;
+  background:linear-gradient(#10141f,#050505);
+  font-family:Arial;
+  color:white;
+  text-align:center;
+  padding:10px;
+}
+
+h1{color:#ffb347;}
+
+#game{
+  display:grid;
+  grid-template-columns:repeat(14,1fr);
+  gap:3px;
+  max-width:700px;
+  margin:auto;
+  padding:6px;
+  background:#222;
+  border-radius:15px;
+}
+
+.cell{
+  aspect-ratio:1;
+  display:flex;
+  justify-content:center;
+  align-items:center;
+  background:#eadfca;
+  border-radius:6px;
+  font-size:22px;
+}
+
+.wall{background:#111;}
+.doorR{background:#8b1f1f;}
+.doorB{background:#203b8b;}
+.exit{background:#ff9b2e;}
+
+#msg{
+  margin:12px auto;
+  padding:10px;
+  max-width:700px;
+  background:#111;
+  border-radius:12px;
+  min-height:50px;
+  color:#ffd88f;
+}
+
+button{
+  padding:10px;
+  margin:5px;
+  font-size:22px;
+  border:none;
+  border-radius:10px;
+  background:#ff8a00;
+  color:white;
+}
+</style>
+</head>
+
+<body>
+
+<h1>Claudius Labyrinthe Magique N2</h1>
+
+<div>
+🔴 <span id="r">0</span>/1
+🔵 <span id="b">0</span>/1
+🟡 <span id="j">0</span>/1
+&nbsp;&nbsp;
+🔑 Rouge : <span id="kr">❌</span>
+🗝 Bleu : <span id="kb">❌</span>
+</div>
+
+<div id="game"></div>
+
+<div id="msg">
+Trouve les clés, ouvre les portes et retrouve les trois couleurs.
+</div>
+
+<div>
+<button onclick="move(0,-1)">▲</button><br>
+<button onclick="move(-1,0)">◀</button>
+<button onclick="move(0,1)">▼</button>
+<button onclick="move(1,0)">▶</button><br>
+<button onclick="restart()">Recommencer</button>
+</div>
+
+<script>
+const base=[
+"##############",
+"#P..r.#....K.#",
+"#.##.#.###.#.#",
+"#....#...#.#.#",
+"###D####.#.#.#",
+"#....#...#...#",
+"#.######.###.#",
+"#..b..T..k...#",
+"#####.#####..#",
+"#....#....#..#",
+"#..j.#.S..d..#",
+"##############"
+];
+
+let map;
+let x;
+let y;
+
+let red;
+let blue;
+let yellow;
+
+let keyR;
+let keyB;
+
+let direction;
+
+const game=document.getElementById("game");
+
+function restart(){
+  map=base.map(row=>row.split(""));
+  x=1;
+  y=1;
+
+  red=0;
+  blue=0;
+  yellow=0;
+
+  keyR=false;
+  keyB=false;
+
+  direction="bas";
+
+  document.getElementById("r").textContent=0;
+  document.getElementById("b").textContent=0;
+  document.getElementById("j").textContent=0;
+  document.getElementById("kr").textContent="❌";
+  document.getElementById("kb").textContent="❌";
+
+  msg("Trouve les clés, ouvre les portes et retrouve les trois couleurs.");
+  draw();
+}
+
+function draw(){
+  game.innerHTML="";
+
+  for(let row=0; row<map.length; row++){
+    for(let col=0; col<map[row].length; col++){
+      const cell=document.createElement("div");
+      cell.className="cell";
+
+      const v=map[row][col];
+
+      if(v=="#") cell.classList.add("wall");
+
+      if(v=="P"){
+        cell.innerHTML=`
+          <img src="claudius-${direction}.png"
+          style="width:90%;height:90%;object-fit:contain;">
+        `;
+      }
+
+      if(v=="r") cell.innerHTML="🔴";
+      if(v=="b") cell.innerHTML="🔵";
+      if(v=="j") cell.innerHTML="🟡";
+
+      if(v=="K") cell.innerHTML="🔑";
+      if(v=="k") cell.innerHTML="🗝";
+
+      if(v=="D"){
+        cell.innerHTML="🚪";
+        cell.classList.add("doorR");
+      }
+
+      if(v=="d"){
+        cell.innerHTML="🚪";
+        cell.classList.add("doorB");
+      }
+
+      if(v=="T") cell.innerHTML="🌀";
+
+      if(v=="S"){
+        cell.innerHTML="☀️";
+        cell.classList.add("exit");
+      }
+
+      game.appendChild(cell);
+    }
+  }
+}
+
+function move(dx,dy){
+  if(dx==1) direction="gauche";
+  if(dx==-1) direction="droite";
+  if(dy==1) direction="bas";
+  if(dy==-1) direction="haut";
+
+  const nx=x+dx;
+  const ny=y+dy;
+  const target=map[ny][nx];
+
+  if(target=="#") return;
+
+  if(target=="D" && !keyR){
+    msg("La porte rouge est fermée. Il faut trouver la clé rouge.");
+    draw();
+    return;
+  }
+
+  if(target=="d" && !keyB){
+    msg("La porte bleue est fermée. Il faut trouver la clé bleue.");
+    draw();
+    return;
+  }
+
+  if(target=="r"){
+    red=1;
+    document.getElementById("r").textContent=1;
+    msg("Rouge retrouvé : une braise rallume le village.");
+  }
+
+  if(target=="b"){
+    blue=1;
+    document.getElementById("b").textContent=1;
+    msg("Bleu retrouvé : la mer revient respirer.");
+  }
+
+  if(target=="j"){
+    yellow=1;
+    document.getElementById("j").textContent=1;
+    msg("Jaune retrouvé : une lumière douce traverse les toits.");
+  }
+
+  if(target=="K"){
+    keyR=true;
+    document.getElementById("kr").textContent="✅";
+    msg("Clé rouge trouvée.");
+  }
+
+  if(target=="k"){
+    keyB=true;
+    document.getElementById("kb").textContent="✅";
+    msg("Clé bleue trouvée.");
+  }
+
+  if(target=="T"){
+    msg("Téléportation magique.");
+    map[y][x]=".";
+    x=2;
+    y=9;
+    map[y][x]="P";
+    draw();
+    return;
+  }
+
+  if(target=="S"){
+    if(red && blue && yellow){
+      msg("✨ Bravo Claude. Les trois couleurs sont revenues et le soleil s’ouvre.");
+    }else{
+      msg("Le soleil attend encore les trois couleurs perdues.");
+      draw();
+      return;
+    }
+  }
+
+  map[y][x]=".";
+  x=nx;
+  y=ny;
+  map[y][x]="P";
+
+  draw();
+}
+
+function msg(text){
+  document.getElementById("msg").innerHTML=text;
+}
+
+window.addEventListener("keydown",function(e){
+  if(e.key=="ArrowUp") move(0,-1);
+  if(e.key=="ArrowDown") move(0,1);
+  if(e.key=="ArrowLeft") move(-1,0);
+  if(e.key=="ArrowRight") move(1,0);
+});
+
+restart();
+</script>
+
+</body>
+</html>
