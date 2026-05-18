@@ -185,6 +185,7 @@ let map;
 let player = {x:1, y:1};
 let colorsFound = 0;
 let gameFinished = false;
+  let direction = "bas";
 
 const game = document.getElementById("game");
 const message = document.getElementById("message");
@@ -242,6 +243,10 @@ style="width:90%;height:90%;object-fit:contain;">`;
 }
 
 function movePlayer(dx, dy){
+if(dx === 1) direction = "droite";
+if(dx === -1) direction = "gauche";
+if(dy === 1) direction = "bas";
+if(dy === -1) direction = "haut";  
   if(gameFinished) return;
 
   const newX = player.x + dx;
